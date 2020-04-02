@@ -14,4 +14,12 @@
         <module>request-logging-spring-boot-starter</module>
     </modules>
 
+    <distributionManagement>
+        <repository>
+            <id>github</id>
+            <name>GitHub etherealscope Apache Maven Packages</name>
+            <url>https://maven.pkg.github.com/etherealscope/request-logging</url>
+        </repository>
+    </distributionManagement>
+
 </project>
