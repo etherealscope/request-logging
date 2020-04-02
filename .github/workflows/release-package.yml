@@ -24,4 +24,4 @@ jobs:
       - name: Build
         run: mvn clean package
       - name: Deploy package
-        run: mvn deploy -Dregistry=https://maven.pkg.github.com/etherealscope -Dtoken=${{ secrets.GITHUB_TOKEN }}
+        run: mvn deploy -Dregistry=https://maven.pkg.github.com/etherealscope -Dtoken=${{ github.token }}
