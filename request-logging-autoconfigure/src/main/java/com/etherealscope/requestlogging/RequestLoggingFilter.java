@@ -1,11 +1,10 @@
-package com.etherealscope.requestloggingfilter;
+package com.etherealscope.requestlogging;
 
-import com.etherealscope.requestloggingfilter.RequestLoggingProperties.Mask;
+import com.etherealscope.requestlogging.RequestLoggingProperties.Mask;
 import lombok.RequiredArgsConstructor;
 import lombok.SneakyThrows;
 import lombok.experimental.FieldDefaults;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.boot.web.servlet.filter.OrderedFilter;
 import org.springframework.core.annotation.Order;
 import org.springframework.util.LinkedMultiValueMap;
 import org.springframework.util.MultiValueMap;
@@ -21,29 +20,31 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 
-import static com.etherealscope.requestloggingfilter.CommonUtils.NOTHING;
-import static com.etherealscope.requestloggingfilter.CommonUtils.enumerationAsStream;
-import static com.etherealscope.requestloggingfilter.CommonUtils.byteArrayToString;
-import static com.etherealscope.requestloggingfilter.MaskUtils.filterMasks;
-import static com.etherealscope.requestloggingfilter.MaskUtils.maskBody;
-import static com.etherealscope.requestloggingfilter.MaskUtils.maskHeaders;
-import static com.etherealscope.requestloggingfilter.MaskUtils.maskQueryParams;
+import static com.etherealscope.requestlogging.CommonUtils.NOTHING;
+import static com.etherealscope.requestlogging.CommonUtils.byteArrayToString;
+import static com.etherealscope.requestlogging.CommonUtils.enumerationAsStream;
+import static com.etherealscope.requestlogging.CommonUtils.servletPathEnabled;
+import static com.etherealscope.requestlogging.MaskUtils.filterMasks;
+import static com.etherealscope.requestlogging.MaskUtils.maskBody;
+import static com.etherealscope.requestlogging.MaskUtils.maskHeaders;
+import static com.etherealscope.requestlogging.MaskUtils.maskQueryParams;
 import static java.lang.System.currentTimeMillis;
 import static java.util.stream.Collectors.joining;
 import static lombok.AccessLevel.PRIVATE;
+import static org.springframework.core.Ordered.HIGHEST_PRECEDENCE;
 import static org.springframework.web.util.WebUtils.getNativeRequest;
 import static org.springframework.web.util.WebUtils.getNativeResponse;
 
 @Slf4j
-@Order(OrderedFilter.HIGHEST_PRECEDENCE)
+@Order(HIGHEST_PRECEDENCE)
 @RequiredArgsConstructor
 @FieldDefaults(level = PRIVATE, makeFinal = true)
 public class RequestLoggingFilter extends OncePerRequestFilter {
 
-    private static final String BEFORE_REQUEST_MESSAGE = "--- REQUEST LOG START ---";
-    private static final String AFTER_REQUEST_MESSAGE = "--- REQUEST LOG END ---";
-    private static final String BEFORE_RESPONSE_MESSAGE = "--- RESPONSE LOG START ---";
-    private static final String AFTER_RESPONSE_MESSAGE = "--- RESPONSE LOG END ---";
+    private static final String BEFORE_REQUEST_MESSAGE = "--- REQUEST START ---";
+    private static final String AFTER_REQUEST_MESSAGE = "--- REQUEST END ---";
+    private static final String BEFORE_RESPONSE_MESSAGE = "--- RESPONSE START ---";
+    private static final String AFTER_RESPONSE_MESSAGE = "--- RESPONSE END ---";
 
     RequestLoggingProperties props;
 
@@ -59,26 +60,30 @@ public class RequestLoggingFilter extends OncePerRequestFilter {
         String contentType = request.getContentType();
         String servletPath = request.getServletPath();
 
-        if (shouldLogRequestBody(method, contentType) && !(request instanceof ContentCachingRequestWrapper)) {
+        if (shouldLogRequestBody(servletPath, method, contentType) && !(request instanceof ContentCachingRequestWrapper)) {
             request = new ContentCachingRequestWrapper(request);
         }
 
-        if (shouldCacheResponse() && !(response instanceof ContentCachingResponseWrapper)) {
+        if (shouldCacheResponse(servletPath) && !(response instanceof ContentCachingResponseWrapper)) {
             response = new ContentCachingResponseWrapper(response);
         }
 
         try {
-            if (props.getResponse().isEnabled()) {
-                List<Mask> requestMasks = filterMasks(method, servletPath, props.getRequest().getMasks());
-                log.debug(getRequestLogMessage(request, requestMasks));
-            }
             filterChain.doFilter(request, response);
         } finally {
-            if (props.getResponse().isEnabled()) {
-                List<Mask> responseMasks = filterMasks(method, servletPath, props.getResponse().getMasks());
-                log.debug(getResponseLogMessage(response, responseMasks));
+            String logMessage = "";
+            if (shouldLogRequest(servletPath)) {
+                List<Mask> requestMasks = filterMasks(method, servletPath, props.getRequest().getMasks());
+                logMessage += getRequestLogMessage(request, requestMasks);
             }
-            if (shouldCacheResponse()) {
+            if (shouldLogResponse(servletPath)) {
+                List<Mask> responseMasks = filterMasks(method, servletPath, props.getResponse().getMasks());
+                logMessage += getResponseLogMessage(servletPath, response, responseMasks);
+            }
+            if (!logMessage.isEmpty()) {
+                log.debug(logMessage);
+            }
+            if (shouldCacheResponse(servletPath)) {
                 updateResponse(response);
             }
         }
@@ -88,8 +93,23 @@ public class RequestLoggingFilter extends OncePerRequestFilter {
         }
     }
 
-    private boolean shouldLogRequestBody(String method, String contentType) {
-        if(!props.getRequest().isEnabled() || !props.getRequest().isIncludePayload()) {
+    private boolean shouldLogRequest(String servletPath) {
+        return log.isDebugEnabled()
+                && props.getRequest().isEnabled()
+                && servletPathEnabled(servletPath, props.getRequest().getWhiteListedServletPaths(), props.getRequest().getBlackListedServletPaths());
+    }
+
+    private boolean shouldLogResponse(String servletPath) {
+        return log.isDebugEnabled()
+                && props.getResponse().isEnabled()
+                && servletPathEnabled(servletPath, props.getResponse().getWhiteListedServletPaths(), props.getResponse().getBlackListedServletPaths());
+    }
+
+    private boolean shouldLogRequestBody(String servletPath, String method, String contentType) {
+        if (!shouldLogRequest(servletPath)) {
+            return false;
+        }
+        if(!props.getRequest().isIncludePayload()) {
             return false;
         }
         if (!"POST".equals(method) && !"PUT".equals(method) && !"PATCH".equals(method)) {
@@ -113,12 +133,15 @@ public class RequestLoggingFilter extends OncePerRequestFilter {
         return true;
     }
 
-    private boolean shouldCacheResponse() {
+    private boolean shouldCacheResponse(String servletPath) {
+        if (!shouldLogResponse(servletPath)) {
+            return false;
+        }
         return props.getResponse().isEnabled() && props.getResponse().isIncludePayload();
     }
 
-    private boolean shouldLogResponseBody(String contentType) {
-        if(!shouldCacheResponse()) {
+    private boolean shouldLogResponseBody(String servletPath, String contentType) {
+        if(!shouldCacheResponse(servletPath)) {
             return false;
         }
         if (props.getResponse().getWhiteListedContentTypes().length > 0) {
@@ -166,7 +189,7 @@ public class RequestLoggingFilter extends OncePerRequestFilter {
         logMap.put("Content-Length: ", request.getContentLengthLong());
         logMap.put("Character-Encoding: ", request.getCharacterEncoding());
 
-        if (shouldLogRequestBody(request.getMethod(), request.getContentType())) {
+        if (shouldLogRequestBody(request.getServletPath(), request.getMethod(), request.getContentType())) {
             logMap.put("Body: ", maskBody(getRequestPayload(request), request.getContentType(), masks));
         }
 
@@ -178,7 +201,7 @@ public class RequestLoggingFilter extends OncePerRequestFilter {
                 + AFTER_REQUEST_MESSAGE;
     }
 
-    private String getResponseLogMessage(HttpServletResponse response, List<Mask> masks) {
+    private String getResponseLogMessage(String servletPath, HttpServletResponse response, List<Mask> masks) {
         Map<String, Object> logMap = new LinkedHashMap<>();
         logMap.put("Status-Code: ", response.getStatus());
         logMap.put("Content-Type: ", response.getContentType());
@@ -191,7 +214,7 @@ public class RequestLoggingFilter extends OncePerRequestFilter {
             logMap.put("Headers: ", headers);
         }
 
-        if (shouldLogResponseBody(response.getContentType())) {
+        if (shouldLogResponseBody(servletPath, response.getContentType())) {
             logMap.put("Body: ", maskBody(getResponsePayload(response), response.getContentType(), masks));
         }
 

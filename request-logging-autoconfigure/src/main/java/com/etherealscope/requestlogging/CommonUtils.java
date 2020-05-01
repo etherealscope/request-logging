@@ -1,6 +1,7 @@
-package com.etherealscope.requestloggingfilter;
+package com.etherealscope.requestlogging;
 
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.util.AntPathMatcher;
 
 import java.io.UnsupportedEncodingException;
 import java.util.Enumeration;
@@ -17,6 +18,7 @@ class CommonUtils {
 
     static final String NOTHING = "[nothing]";
     static final String UNKNOWN = "[unknown]";
+    static final AntPathMatcher MATCHER = new AntPathMatcher();
 
     static String byteArrayToString(byte[] byteArray, String encoding, int maxLength) {
         if (byteArray != null && byteArray.length > 0) {
@@ -43,6 +45,26 @@ class CommonUtils {
                             }
                         },
                         Spliterator.ORDERED), false);
+    }
+
+    static boolean servletPathEnabled(String servletPath, String[] whiteList, String[] blackList) {
+        if (whiteList.length == 0 && blackList.length == 0) {
+            return true;
+        }
+        if (whiteList.length > 0) {
+            for (String s: whiteList) {
+                if(MATCHER.match(s, servletPath)) {
+                    return true;
+                }
+            }
+            return false;
+        }
+        for (String s: blackList) {
+            if(MATCHER.match(s, servletPath)) {
+                    return false;
+            }
+        }
+        return true;
     }
 
 }

@@ -1,4 +1,4 @@
-package com.etherealscope.requestloggingfilter;
+package com.etherealscope.requestlogging;
 
 import org.springframework.boot.autoconfigure.AutoConfigureAfter;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnClass;

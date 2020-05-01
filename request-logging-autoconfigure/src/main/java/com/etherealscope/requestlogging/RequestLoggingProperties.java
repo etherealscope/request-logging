@@ -1,4 +1,4 @@
-package com.etherealscope.requestloggingfilter;
+package com.etherealscope.requestlogging;
 
 import lombok.Data;
 import lombok.experimental.FieldDefaults;
@@ -84,6 +84,14 @@ public class RequestLoggingProperties {
          */
         String[] blackListedContentTypes = new String[] {};
         /**
+         * White listed servlet paths where to log request.
+         */
+        String[] whiteListedServletPaths = new String[] {};
+        /**
+         * Black listed servlet paths where to log request.
+         */
+        String[] blackListedServletPaths = new String[] {};
+        /**
          * Masks to apply for request due to security.
          */
         Mask[] masks = new Mask[] {};
@@ -117,6 +125,14 @@ public class RequestLoggingProperties {
          * Black listed content types where to log body.
          */
         String[] blackListedContentTypes = new String[] {};
+        /**
+         * White listed servlet paths where to log response.
+         */
+        String[] whiteListedServletPaths = new String[] {};
+        /**
+         * Black listed servlet paths where to log response.
+         */
+        String[] blackListedServletPaths = new String[] {};
         /**
          * Masks to apply for response due to security.
          */
@@ -159,6 +175,12 @@ public class RequestLoggingProperties {
         }
         if (request.whiteListedContentTypes == null || response.whiteListedContentTypes == null) {
             throw new IllegalArgumentException("White listed content types cannot be null, empty array required");
+        }
+        if (request.blackListedServletPaths == null || response.blackListedServletPaths == null) {
+            throw new IllegalArgumentException("Black listed servlet paths cannot be null, empty array required");
+        }
+        if (request.whiteListedServletPaths == null || response.whiteListedServletPaths == null) {
+            throw new IllegalArgumentException("White listed servlet paths cannot be null, empty array required");
         }
         if (request.masks == null || response.masks == null) {
             throw new IllegalArgumentException("Masks cannot be null, empty array required");

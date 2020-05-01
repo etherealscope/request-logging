@@ -1,6 +1,6 @@
-package com.etherealscope.requestloggingfilter;
+package com.etherealscope.requestlogging;
 
-import com.etherealscope.requestloggingfilter.RequestLoggingProperties.Mask;
+import com.etherealscope.requestlogging.RequestLoggingProperties.Mask;
 import org.springframework.util.AntPathMatcher;
 import org.springframework.util.MultiValueMap;
 
