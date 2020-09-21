@@ -97,12 +97,14 @@ public class RequestLoggingFilter extends OncePerRequestFilter {
 
     private boolean shouldLogRequest(String servletPath) {
         return log.isDebugEnabled()
+                && props.isEnabled()
                 && props.getRequest().isEnabled()
                 && servletPathEnabled(servletPath, props.getRequest().getWhiteListedServletPaths(), props.getRequest().getBlackListedServletPaths());
     }
 
     private boolean shouldLogResponse(String servletPath) {
         return log.isDebugEnabled()
+                && props.isEnabled()
                 && props.getResponse().isEnabled()
                 && servletPathEnabled(servletPath, props.getResponse().getWhiteListedServletPaths(), props.getResponse().getBlackListedServletPaths());
     }

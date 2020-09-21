@@ -16,7 +16,7 @@ import javax.servlet.Servlet;
 
 @Configuration
 @ConditionalOnWebApplication
-@ConditionalOnProperty(name = "ethereal.request-logging.enabled", havingValue = "true", matchIfMissing = true)
+@ConditionalOnProperty(name = "ethereal.logging.enabled", havingValue = "true", matchIfMissing = true)
 @ConditionalOnClass({ Servlet.class, DispatcherServlet.class, WebMvcConfigurer.class })
 @EnableConfigurationProperties(RequestLoggingProperties.class)
 @AutoConfigureAfter(WebMvcAutoConfiguration.class)

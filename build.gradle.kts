@@ -43,7 +43,7 @@ subprojects {
     }
 
     group = "com.etherealscope"
-    version = "3.0.0"
+    version = "4.0.0"
 
     apply(plugin="java")
     apply(plugin="maven")

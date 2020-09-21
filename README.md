@@ -19,6 +19,7 @@ dependencies {
 ```
 ethereal.logging.enabled=true
 ethereal.logging.include-time-elapsed=true
+ethereal.logging.status-codes=SC_ANY
 
 ethereal.logging.request.enabled=true
 ethereal.logging.request.include-headers=true
