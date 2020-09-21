@@ -1,17 +1,26 @@
 package com.etherealscope.requestlogging;
 
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.http.HttpStatus;
 import org.springframework.util.AntPathMatcher;
 
 import java.io.UnsupportedEncodingException;
 import java.util.Enumeration;
 import java.util.Iterator;
+import java.util.List;
 import java.util.Spliterator;
 import java.util.Spliterators;
 import java.util.stream.Stream;
 import java.util.stream.StreamSupport;
 
+import static com.etherealscope.requestlogging.StatusCode.SC_1XX;
+import static com.etherealscope.requestlogging.StatusCode.SC_2XX;
+import static com.etherealscope.requestlogging.StatusCode.SC_3XX;
+import static com.etherealscope.requestlogging.StatusCode.SC_4XX;
+import static com.etherealscope.requestlogging.StatusCode.SC_5XX;
+import static com.etherealscope.requestlogging.StatusCode.SC_ANY;
 import static java.lang.Math.min;
+import static java.util.Arrays.asList;
 
 @Slf4j
 class CommonUtils {
@@ -65,6 +74,33 @@ class CommonUtils {
             }
         }
         return true;
+    }
+
+    static boolean shouldLogStatusCode(HttpStatus httpStatus, StatusCode[] codes) {
+        if (httpStatus == null) {
+            return true;
+        }
+        List<StatusCode> codeList = asList(codes);
+        if (codeList.contains(SC_ANY)) {
+            return true;
+        }
+        if (codeList.contains(SC_1XX) && httpStatus.is1xxInformational()) {
+            return true;
+        }
+        if (codeList.contains(SC_2XX) && httpStatus.is2xxSuccessful()) {
+
+        }
+        if (codeList.contains(SC_3XX) && httpStatus.is3xxRedirection()) {
+            return true;
+        }
+        if (codeList.contains(SC_4XX) && httpStatus.is4xxClientError()
+        ) {
+            return true;
+        }
+        if (codeList.contains(SC_5XX) && httpStatus.is5xxServerError()) {
+            return true;
+        }
+        return false;
     }
 
 }

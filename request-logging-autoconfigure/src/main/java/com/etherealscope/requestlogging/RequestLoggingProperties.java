@@ -7,6 +7,7 @@ import org.springframework.http.HttpMethod;
 
 import javax.annotation.PostConstruct;
 
+import static com.etherealscope.requestlogging.StatusCode.SC_ANY;
 import static lombok.AccessLevel.PRIVATE;
 import static org.springframework.http.MediaType.APPLICATION_FORM_URLENCODED_VALUE;
 import static org.springframework.http.MediaType.APPLICATION_JSON_VALUE;
@@ -38,6 +39,10 @@ public class RequestLoggingProperties {
      * If true, at the filter end elapsed time will be logged.
      */
     boolean includeTimeElapsed = true;
+    /**
+     * Response status codes when to log request and response.
+     */
+    StatusCode[] statusCodes = new StatusCode[] {SC_ANY};
     /**
      * Request related config.
      */
@@ -167,6 +172,9 @@ public class RequestLoggingProperties {
 
     @PostConstruct
     void init() {
+        if (statusCodes == null || statusCodes.length == 0) {
+            throw new IllegalArgumentException("Status codes cannot be null or empty");
+        }
         if (request.maxPayloadSize <= 0 || response.maxPayloadSize <= 0) {
             throw new IllegalArgumentException("Max payload size cannot be negative");
         }

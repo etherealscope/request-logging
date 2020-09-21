@@ -24,6 +24,7 @@ import static com.etherealscope.requestlogging.CommonUtils.NOTHING;
 import static com.etherealscope.requestlogging.CommonUtils.byteArrayToString;
 import static com.etherealscope.requestlogging.CommonUtils.enumerationAsStream;
 import static com.etherealscope.requestlogging.CommonUtils.servletPathEnabled;
+import static com.etherealscope.requestlogging.CommonUtils.shouldLogStatusCode;
 import static com.etherealscope.requestlogging.MaskUtils.filterMasks;
 import static com.etherealscope.requestlogging.MaskUtils.maskBody;
 import static com.etherealscope.requestlogging.MaskUtils.maskHeaders;
@@ -32,6 +33,7 @@ import static java.lang.System.currentTimeMillis;
 import static java.util.stream.Collectors.joining;
 import static lombok.AccessLevel.PRIVATE;
 import static org.springframework.core.Ordered.HIGHEST_PRECEDENCE;
+import static org.springframework.http.HttpStatus.resolve;
 import static org.springframework.web.util.WebUtils.getNativeRequest;
 import static org.springframework.web.util.WebUtils.getNativeResponse;
 
@@ -80,7 +82,7 @@ public class RequestLoggingFilter extends OncePerRequestFilter {
                 List<Mask> responseMasks = filterMasks(method, servletPath, props.getResponse().getMasks());
                 logMessage += getResponseLogMessage(servletPath, response, responseMasks);
             }
-            if (!logMessage.isEmpty()) {
+            if (!logMessage.isEmpty() && shouldLogStatusCode(resolve(response.getStatus()), props.getStatusCodes())) {
                 log.debug(logMessage);
             }
             if (shouldCacheResponse(servletPath)) {
