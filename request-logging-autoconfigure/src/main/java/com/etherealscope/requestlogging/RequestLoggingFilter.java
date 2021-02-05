@@ -232,9 +232,8 @@ public class RequestLoggingFilter extends OncePerRequestFilter {
 
     private String getResponsePayload(HttpServletResponse response) {
         ContentCachingResponseWrapper wrapper = getNativeResponse(response, ContentCachingResponseWrapper.class);
-        String encoding = response.getCharacterEncoding() != null ? response.getCharacterEncoding() : "UTF-8";
         if (wrapper != null) {
-            return byteArrayToString(wrapper.getContentAsByteArray(), encoding, props.getResponse().getMaxPayloadSize());
+            return byteArrayToString(wrapper.getContentAsByteArray(), props.getResponse().getMaxPayloadSize());
         }
         return NOTHING;
     }
@@ -242,8 +241,7 @@ public class RequestLoggingFilter extends OncePerRequestFilter {
     private String getRequestPayload(HttpServletRequest request) {
         ContentCachingRequestWrapper wrapper = getNativeRequest(request, ContentCachingRequestWrapper.class);
         if (wrapper != null) {
-            String encoding = request.getCharacterEncoding() != null ? request.getCharacterEncoding() : "UTF-8";
-            return byteArrayToString(wrapper.getContentAsByteArray(), encoding, props.getRequest().getMaxPayloadSize());
+            return byteArrayToString(wrapper.getContentAsByteArray(), props.getRequest().getMaxPayloadSize());
         }
         return NOTHING;
     }

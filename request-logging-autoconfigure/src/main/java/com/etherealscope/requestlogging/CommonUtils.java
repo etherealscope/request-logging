@@ -4,7 +4,6 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpStatus;
 import org.springframework.util.AntPathMatcher;
 
-import java.io.UnsupportedEncodingException;
 import java.util.Enumeration;
 import java.util.Iterator;
 import java.util.List;
@@ -20,24 +19,19 @@ import static com.etherealscope.requestlogging.StatusCode.SC_4XX;
 import static com.etherealscope.requestlogging.StatusCode.SC_5XX;
 import static com.etherealscope.requestlogging.StatusCode.SC_ANY;
 import static java.lang.Math.min;
+import static java.nio.charset.StandardCharsets.UTF_8;
 import static java.util.Arrays.asList;
 
 @Slf4j
 class CommonUtils {
 
     static final String NOTHING = "[nothing]";
-    static final String UNKNOWN = "[unknown]";
     static final AntPathMatcher MATCHER = new AntPathMatcher();
 
-    static String byteArrayToString(byte[] byteArray, String encoding, int maxLength) {
+    static String byteArrayToString(byte[] byteArray, int maxLength) {
         if (byteArray != null && byteArray.length > 0) {
             int length = min(byteArray.length, maxLength);
-            try {
-                return new String(byteArray, 0, length, encoding);
-            } catch (UnsupportedEncodingException ex) {
-                log.warn("Unsupported encoding in request or response {}", encoding);
-                return UNKNOWN;
-            }
+            return new String(byteArray, 0, length, UTF_8);
         }
         return NOTHING;
     }
