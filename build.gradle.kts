@@ -1,26 +1,14 @@
-import java.util.*
-
-buildscript {
-    repositories {
-        mavenLocal()
-        mavenCentral()
-        jcenter()
-    }
-}
-
 repositories {
-    mavenCentral()
     mavenLocal()
-    jcenter()
+    mavenCentral()
 }
 
 plugins {
     java
-    maven
     `maven-publish`
-    id("com.jfrog.bintray") version "1.8.1"
-    id("org.springframework.boot") version "2.2.0.RELEASE"
-    id("io.spring.dependency-management") version "1.0.9.RELEASE"
+    signing
+    id("org.springframework.boot") version "2.4.5"
+    id("io.spring.dependency-management") version "1.0.11.RELEASE"
 }
 
 tasks {
@@ -34,39 +22,42 @@ tasks {
 }
 
 subprojects {
-    buildscript {
-        repositories {
-            mavenLocal()
-            mavenCentral()
-            jcenter()
-        }
-    }
 
     group = "com.etherealscope"
-    version = "4.2.0"
+    version = "5.0.0"
 
     apply(plugin="java")
-    apply(plugin="maven")
     apply(plugin="maven-publish")
+    apply(plugin="signing")
     apply(plugin="io.spring.dependency-management")
     apply(plugin="org.springframework.boot")
-    apply(plugin="com.jfrog.bintray")
 
     repositories {
         mavenCentral()
         mavenLocal()
-        jcenter()
     }
 
     dependencyManagement {
         imports {
-            mavenBom("org.springframework.boot:spring-boot-dependencies:2.2.0.RELEASE")
+            mavenBom("org.springframework.boot:spring-boot-dependencies:2.4.5")
         }
     }
 
     configure<JavaPluginConvention> {
         sourceCompatibility = JavaVersion.VERSION_1_8
         targetCompatibility = JavaVersion.VERSION_1_8
+    }
+
+    val sourcesJar by tasks.creating(Jar::class) {
+        dependsOn(JavaPlugin.CLASSES_TASK_NAME)
+        archiveClassifier.set("sources")
+        from(sourceSets["main"].allSource)
+    }
+
+    val javadocJar by tasks.creating(Jar::class) {
+        dependsOn(JavaPlugin.JAVADOC_TASK_NAME)
+        archiveClassifier.set("javadoc")
+        from(tasks.javadoc)
     }
 
     tasks {
@@ -77,29 +68,75 @@ subprojects {
         getByName<Jar>("jar") {
             enabled = true
         }
+
+        artifacts {
+            add("archives", sourcesJar)
+            add("archives", javadocJar)
+        }
     }
 
-    configure<com.jfrog.bintray.gradle.BintrayExtension> {
-        user = System.getProperty("bintray.user")
-        key = System.getProperty("bintray.key")
-        publish = true
-        setPublications("maven")
-        pkg(delegateClosureOf<com.jfrog.bintray.gradle.BintrayExtension.PackageConfig> {
-            repo = "maven"
-            name = project.name
-            userOrg = "etherealscope"
-            websiteUrl = "https://github.com/etherealscope/request-logging"
-            githubRepo = "etherealscope/request-logging"
-            vcsUrl = "https://github.com/etherealscope/request-logging"
-            description = project.description
-            setLabels("java")
-            setLicenses("Apache-2.0")
-            desc = description
-            version(closureOf<com.jfrog.bintray.gradle.BintrayExtension.VersionConfig> {
-                this.name = project.version.toString()
-                released = Date().toString()
-            })
-        })
+    publishing {
+        repositories {
+            maven {
+                name = "central"
+                url = uri("https://s01.oss.sonatype.org/service/local/staging/deploy/maven2/")
+                credentials {
+                    username = project.property("ossrhUsername").toString() //System.getProperty("ossrhUsername")
+                    password = project.property("ossrhPassword").toString() //System.getProperty("ossrhPassword")
+                }
+            }
+            maven {
+                name = "centralSnapshot"
+                url = uri("https://s01.oss.sonatype.org/content/repositories/snapshots/")
+                credentials {
+                    username = project.property("ossrhUsername").toString()
+                    password = project.property("ossrhPassword").toString()
+                }
+            }
+        }
+        publications {
+            create<MavenPublication>("mavenJava") {
+                groupId = project.group.toString()
+                artifactId = project.name
+                version = project.version.toString()
+
+                from(components["java"])
+
+                versionMapping {
+                    usage("java-runtime") {
+                        fromResolutionResult()
+                    }
+                }
+
+                pom {
+                    name.set("Spring Boot Request Logging")
+                    description.set("Spring Boot starter for enhanced http request logging")
+                    url.set("https://github.com/etherealscope/request-logging")
+                    licenses {
+                        license {
+                            name.set("The Apache License, Version 2.0")
+                            url.set("https://www.apache.org/licenses/LICENSE-2.0.txt")
+                        }
+                    }
+                    developers {
+                        developer {
+                            id.set("jakubv")
+                            name.set("Jakub Venglar")
+                            email.set("info@etherealscope.com")
+                        }
+                    }
+                    scm {
+                        connection.set("scm:git:git://github.com/etherealscope/request-logging.git")
+                        developerConnection.set("scm:git:ssh://github.com/etherealscope/request-logging.git")
+                        url.set("https://github.com/etherealscope/request-logging")
+                    }
+                }
+            }
+        }
+    }
+
+    signing {
+        sign(publishing.publications["mavenJava"])
     }
 
 }

@@ -1,17 +1,12 @@
 # request-logging project
 Spring boot starter for request and response logging.
 
-It adds filter with highest precedence.
+It adds filter with the highest precedence.
 
 ## How to use
 ```
-repositories {
-    maven {
-        setUrl("https://dl.bintray.com/etherealscope/maven")
-    }
-}
 dependencies {
-    implementation("com.etherealscope:request-logging-spring-boot-starter:1.0.0")
+    implementation("com.etherealscope:request-logging-spring-boot-starter:5.0.0")
 }
 ```
 
@@ -19,7 +14,7 @@ dependencies {
 ```
 ethereal.logging.enabled=true
 ethereal.logging.include-time-elapsed=true
-ethereal.logging.status-codes=SC_ANY
+ethereal.logging.status-codes=sc_any
 
 ethereal.logging.request.enabled=true
 ethereal.logging.request.include-headers=true
