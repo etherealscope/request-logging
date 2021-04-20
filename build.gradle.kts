@@ -4,7 +4,7 @@ repositories {
 }
 
 plugins {
-    java
+    `java-library`
     `maven-publish`
     signing
     id("org.springframework.boot") version "2.4.5"
@@ -26,7 +26,7 @@ subprojects {
     group = "com.etherealscope"
     version = "5.0.0"
 
-    apply(plugin="java")
+    apply(plugin="java-library")
     apply(plugin="maven-publish")
     apply(plugin="signing")
     apply(plugin="io.spring.dependency-management")
@@ -48,16 +48,9 @@ subprojects {
         targetCompatibility = JavaVersion.VERSION_1_8
     }
 
-    val sourcesJar by tasks.creating(Jar::class) {
-        dependsOn(JavaPlugin.CLASSES_TASK_NAME)
-        archiveClassifier.set("sources")
-        from(sourceSets["main"].allSource)
-    }
-
-    val javadocJar by tasks.creating(Jar::class) {
-        dependsOn(JavaPlugin.JAVADOC_TASK_NAME)
-        archiveClassifier.set("javadoc")
-        from(tasks.javadoc)
+    java {
+        withJavadocJar()
+        withSourcesJar()
     }
 
     tasks {
@@ -67,11 +60,6 @@ subprojects {
 
         getByName<Jar>("jar") {
             enabled = true
-        }
-
-        artifacts {
-            add("archives", sourcesJar)
-            add("archives", javadocJar)
         }
     }
 
